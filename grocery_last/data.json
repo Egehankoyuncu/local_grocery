@@ -1,0 +1,64 @@
+{
+    "items": [
+        {
+            "name": "Milk (1 Gallon)",
+            "stores": [
+                {
+                    "name": "Kroger",
+                    "price": 3.49,
+                    "image": "milk_kroger.jpg"
+                },
+                {
+                    "name": "Walmart",
+                    "price": 2.99,
+                    "image": "milk_walmart.jpg"
+                },
+                {
+                    "name": "Target",
+                    "price": 3.29,
+                    "image": "milk_target.jpg"
+                }
+            ]
+        },
+        {
+            "name": "Bread (White, 20 oz)",
+            "stores": [
+                {
+                    "name": "Kroger",
+                    "price": 2.49,
+                    "image": "bread_kroger.jpg"
+                },
+                {
+                    "name": "Walmart",
+                    "price": 1.99,
+                    "image": "bread_walmart.jpg"
+                },
+                {
+                    "name": "Target",
+                    "price": 2.29,
+                    "image": "bread_target.jpg"
+                }
+            ]
+        },
+        {
+            "name": "Eggs (Dozen)",
+            "stores": [
+                {
+                    "name": "Kroger",
+                    "price": 2.99,
+                    "image": "eggs_kroger.jpg"
+                },
+                {
+                    "name": "Walmart",
+                    "price": 2.49,
+                    "image": "eggs_walmart.jpg"
+                },
+                {
+                    "name": "Target",
+                    "price": 2.79,
+                    "image": "eggs_target.jpg"
+                }
+            ]
+        }
+    ]
+} 

@@ -1,0 +1,76 @@
+{% extends 'grocery/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">My Favorites</h2>
+    
+    {% if favorites %}
+    <div class="row">
+        {% for favorite in favorites %}
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title">{{ favorite.product.name }}</h5>
+                        <button class="btn btn-outline-danger favorite-btn active" 
+                                data-product-id="{{ favorite.product.id }}">
+                            <i class="bi bi-heart-fill"></i>
+                        </button>
+                    </div>
+                    <div class="text-center mb-3">
+                        {% if favorite.product.image %}
+                        <img src="{{ favorite.product.image.url }}" class="product-image" alt="{{ favorite.product.name }}">
+                        {% else %}
+                        <img src="{% static 'images/no-image.jpg' %}" class="product-image" alt="No image available">
+                        {% endif %}
+                    </div>
+                    <p class="card-text">
+                        <strong>Store:</strong> {{ favorite.product.store.name }}<br>
+                        <strong>Price:</strong> ${{ favorite.product.price }}
+                    </p>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> You haven't added any products to your favorites yet.
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Favorite functionality
+        $('.favorite-btn').on('click', function(e) {
+            e.preventDefault();
+            const $btn = $(this);
+            const productId = $btn.data('product-id');
+            const $card = $btn.closest('.card');
+            
+            $.ajax({
+                url: `/toggle-favorite/${productId}/`,
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status === 'removed') {
+                        $card.fadeOut(300, function() {
+                            $(this).remove();
+                            // If no favorites left, show message
+                            if ($('.card').length === 0) {
+                                location.reload();
+                            }
+                        });
+                    }
+                }
+            });
+        });
+    });
+</script>
+{% endblock %} 

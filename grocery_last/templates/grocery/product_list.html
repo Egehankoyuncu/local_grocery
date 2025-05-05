@@ -1,0 +1,40 @@
+{% load grocery_extras %}
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Product</th>
+                <th>Store</th>
+                <th>Price</th>
+                <th>Image</th>
+                {% if user.is_authenticated %}
+                    <th>Actions</th>
+                {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+                <tr class="{% if product.price == product_prices|get_item:product.name %}cheapest{% endif %}">
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.store.name }}</td>
+                    <td>${{ product.price }}</td>
+                    <td>
+                        {% if product.image %}
+                            <img src="{{ product.image.url }}" alt="{{ product.name }}" class="product-image">
+                        {% else %}
+                            <img src="/static/store_images/no-image.jpg" alt="No image available" class="product-image">
+                        {% endif %}
+                    </td>
+                    {% if user.is_authenticated %}
+                        <td>
+                            <button class="btn btn-sm {% if product in user.favorite_set.all %}btn-danger{% else %}btn-outline-danger{% endif %}"
+                                    onclick="toggleFavorite({{ product.id }})">
+                                <i class="bi bi-heart"></i>
+                            </button>
+                        </td>
+                    {% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div> 

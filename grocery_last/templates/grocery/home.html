@@ -1,0 +1,137 @@
+{% extends 'grocery/base.html' %}
+{% load static %}
+{% load grocery_extras %}
+
+{% block content %}
+<div class="search-container">
+    <div class="banner-box">
+        <h1 class="display-4">Grocery Price Comparison</h1>
+        <p class="banner-text">Find the best prices for your groceries across different stores</p>
+        
+        <form id="searchForm" class="d-flex justify-content-center mb-3">
+            <div class="input-group" style="max-width: 600px;">
+                <input type="text" class="form-control" id="searchInput" placeholder="Search for products..." value="{{ search_query }}">
+                <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-search"></i> Search
+                </button>
+            </div>
+        </form>
+
+        <div class="row justify-content-center mb-3">
+            <div class="col-md-4">
+                <select class="form-select" id="storeFilter">
+                    <option value="">All Stores</option>
+                    {% for store in stores %}
+                    <option value="{{ store.id }}" {% if store.id|stringformat:"s" == request.GET.store %}selected{% endif %}>
+                        {{ store.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" id="sortSelect">
+                    <option value="">Sort by</option>
+                    <option value="price_asc" {% if request.GET.sort == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                    <option value="price_desc" {% if request.GET.sort == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if products %}
+<div class="container mt-4">
+    <div class="row">
+        {% for product in products %}
+        <div class="col-md-4 mb-4">
+            <div class="card {% if product.price == product_prices|get_item:product.name %}cheapest{% endif %}">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <button class="btn btn-outline-danger favorite-btn {% if product in user.favorites.all %}active{% endif %}" 
+                                data-product-id="{{ product.id }}">
+                            <i class="bi bi-heart"></i>
+                        </button>
+                    </div>
+                    <div class="text-center mb-3">
+                        {% if product.image %}
+                        <img src="{{ product.image.url }}" class="product-image" alt="{{ product.name }}">
+                        {% else %}
+                        <img src="{% static 'images/no-image.jpg' %}" class="product-image" alt="No image available">
+                        {% endif %}
+                    </div>
+                    <p class="card-text">
+                        <strong>Store:</strong> {{ product.store.name }}<br>
+                        <strong>Price:</strong> ${{ product.price }}
+                    </p>
+                    {% if product.price == product_prices|get_item:product.name %}
+                    <div class="alert alert-success">
+                        <i class="bi bi-tag"></i> Best Price!
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Favorite functionality
+        $('.favorite-btn').on('click', function(e) {
+            e.preventDefault();
+            const $btn = $(this);
+            const productId = $btn.data('product-id');
+            
+            $.ajax({
+                url: `/toggle-favorite/${productId}/`,
+                type: 'POST',
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    if (response.status === 'added') {
+                        $btn.addClass('active');
+                        $btn.find('i').removeClass('bi-heart').addClass('bi-heart-fill');
+                    } else {
+                        $btn.removeClass('active');
+                        $btn.find('i').removeClass('bi-heart-fill').addClass('bi-heart');
+                    }
+                },
+                error: function() {
+                    alert('Please log in to add favorites');
+                    window.location.href = '{% url "login" %}';
+                }
+            });
+        });
+
+        // Search functionality
+        $('#searchForm').on('submit', function(e) {
+            e.preventDefault();
+            const searchQuery = $('#searchInput').val();
+            if (searchQuery) {
+                window.location.href = '/?search=' + encodeURIComponent(searchQuery);
+            }
+        });
+
+        // Store filter
+        $('#storeFilter').change(function() {
+            const storeId = $(this).val();
+            const searchQuery = new URLSearchParams(window.location.search).get('search') || '';
+            window.location.href = '/?search=' + encodeURIComponent(searchQuery) + '&store=' + storeId;
+        });
+
+        // Sort functionality
+        $('#sortSelect').change(function() {
+            const sortBy = $(this).val();
+            const searchQuery = new URLSearchParams(window.location.search).get('search') || '';
+            const storeId = new URLSearchParams(window.location.search).get('store') || '';
+            window.location.href = '/?search=' + encodeURIComponent(searchQuery) + '&store=' + storeId + '&sort=' + sortBy;
+        });
+    });
+</script>
+{% endblock %} 

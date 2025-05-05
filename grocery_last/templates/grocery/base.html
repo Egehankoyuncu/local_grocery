@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grocery Price Comparison</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <style>
+        .cheapest {
+            background-color: #d4edda;
+            font-weight: bold;
+        }
+        .product-image {
+            max-width: 100px;
+            max-height: 100px;
+            object-fit: contain;
+        }
+        .search-container {
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .banner-box {
+            background-color: #f8f9fa;
+            border-radius: 10px;
+            padding: 2rem;
+            margin-top: 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .banner-text {
+            font-size: 1.2rem;
+            margin: 0.5rem 0;
+            color: #495057;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="bi bi-shop"></i> Grocery Price Comparison
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    {% if user.is_authenticated %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'favorites' %}">
+                                <i class="bi bi-heart"></i> Favorites
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'logout' %}">
+                                <i class="bi bi-box-arrow-right"></i> Logout
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'login' %}">
+                                <i class="bi bi-box-arrow-in-right"></i> Login
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'register' %}">
+                                <i class="bi bi-person-plus"></i> Register
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Location Modal -->
+    <div class="modal fade" id="locationModal" tabindex="-1" aria-labelledby="locationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="locationModalLabel">Set Your Location</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="locationForm">
+                        <div class="mb-3">
+                            <label for="locationInput" class="form-label">Enter your location</label>
+                            <input type="text" class="form-control" id="locationInput" required>
+                            <div class="form-text">This helps us show you the most relevant prices for your area.</div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="saveLocation">Save Location</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        {% block content %}
+        {% endblock %}
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Location modal
+            {% if show_location_modal %}
+            $('#locationModal').modal('show');
+            {% endif %}
+
+            // Save location functionality
+            $('#saveLocation').on('click', function() {
+                const location = $('#locationInput').val();
+                if (location) {
+                    $.ajax({
+                        url: '/save-location/',
+                        type: 'POST',
+                        data: {
+                            location: location,
+                            csrfmiddlewaretoken: '{{ csrf_token }}'
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                $('#locationModal').modal('hide');
+                                location.reload();
+                            }
+                        }
+                    });
+                }
+            });
+
+            // Search functionality
+            $('#searchForm').on('submit', function(e) {
+                e.preventDefault();
+                const searchQuery = $('#searchInput').val();
+                if (searchQuery) {
+                    window.location.href = '/?search=' + encodeURIComponent(searchQuery);
+                }
+            });
+
+            // Store filter
+            $('#storeFilter').change(function() {
+                const storeId = $(this).val();
+                const searchQuery = new URLSearchParams(window.location.search).get('search') || '';
+                window.location.href = '/?search=' + encodeURIComponent(searchQuery) + '&store=' + storeId;
+            });
+
+            // Sort functionality
+            $('#sortSelect').change(function() {
+                const sortBy = $(this).val();
+                const searchQuery = new URLSearchParams(window.location.search).get('search') || '';
+                const storeId = new URLSearchParams(window.location.search).get('store') || '';
+                window.location.href = '/?search=' + encodeURIComponent(searchQuery) + '&store=' + storeId + '&sort=' + sortBy;
+            });
+
+            // Favorite functionality
+            $('.favorite-btn').click(function() {
+                const productId = $(this).data('product-id');
+                const $btn = $(this);
+                
+                $.post('/toggle-favorite/' + productId + '/', function(response) {
+                    if (response.status === 'added') {
+                        $btn.addClass('active');
+                    } else {
+                        $btn.removeClass('active');
+                    }
+                });
+            });
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html> 
